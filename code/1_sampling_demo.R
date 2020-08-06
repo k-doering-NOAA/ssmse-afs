@@ -44,6 +44,7 @@ sampling_df <- run_SSMSE(scen_name_vec = c("self-test"), # name of the scenario
                 MS_vec = "EM",       # The management strategy is specified in the EM
                 use_SS_boot_vec = TRUE, # use the SS bootstrap module for sampling
                 nyrs_vec = 20,        # Years to project OM forward
+                scope = 2,
                 nyrs_assess_vec = 5, # Years between assessments
                 rec_dev_pattern = c("none"), # Don't use recruitment deviations
                 impl_error_pattern = c("none"), # Don't use implementation error
