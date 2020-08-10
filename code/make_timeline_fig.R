@@ -78,15 +78,15 @@ timeline_plot <-
   geom_text(
     data = month_df,
     aes(x = month_date_range, y = -0.1, label = month_format),
-    size = 2.5,
+    size = 4,
     vjust = 0.5,
     color = 'black',
     angle = 90) +
   geom_text(
     data = year_df,
     aes(x = year_date_range, y = -0.2, label = year_format,
-        fontface = "bold"), size = 2.5, color = 'black') +
-  geom_text(data = df, aes(y = position, label = event, fontface = "bold"), size = 2.5)+
+        fontface = "bold"), size = 4, color = 'black') +
+  geom_text(data = df, aes(y = position, label = event, fontface = "bold"), size = 3.8)+
   theme_classic() +
   theme(# Don't show axes, appropriately position legend
     axis.line.y = element_blank(),
