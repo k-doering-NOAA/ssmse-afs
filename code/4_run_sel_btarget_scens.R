@@ -7,6 +7,7 @@ library(SSMSE)
 library(r4ss)
 library(dplyr)
 library(furrr) # to run in parallel
+library(ggplot2)
 source("code/get_metrics.R") # not used yet
 
 # specify locations, create folders ----
@@ -125,8 +126,6 @@ summary <- SSMSE::SSMSE_summary_all(dir = "model_runs")
 # summary$ts <- read.csv("model_runs/ss3sim_ts.csv")
 # summary$scalar <- read.csv("model_runs/ss3sim_scalar.csv")
 
-summary$ts$model_type <- ifelse(grepl("_EM_", summary$ts$model_run), "EM", "OM")
-
 SSB_df <- check_convergence(summary, n_EMs = 20, max_yr = 200)
 
 # calculate performance metrics ----
@@ -135,13 +134,15 @@ SSB_df <- check_convergence(summary, n_EMs = 20, max_yr = 200)
 
 OM_metrics <- NULL
 for (i in scenarios$scen_name) { # scenarios$scen_name to make general
+
+  iterations <- list.dirs(file.path("model_runs", i), recursive = FALSE, full.names = FALSE)
   OM_name <- grep("_OM$",
-                  list.dirs(file.path("model_runs", i, "2"), full.names = FALSE), 
+                  list.dirs(file.path("model_runs", i, iterations[1]), full.names = FALSE), 
                   value = TRUE)
-  OM_dat <- file.path("model_runs", i, as.character(2), OM_name, "ss3.dat")
-  avg_catch <- unlist(lapply(OM_dat, function(x) get_avg_catch(x)))
-  catch_sd <- unlist(lapply(OM_dat, function(x) get_catch_sd(x)))
-  tmp_df <- data.frame(iteration = 2, scenario = i,
+  OM_dat <- file.path("model_runs", i, iterations, OM_name, "ss3.dat")
+  avg_catch <- unlist(lapply(OM_dat, function(x) get_avg_catch(x, yrs = 175:200)))
+  catch_sd <- unlist(lapply(OM_dat, function(x) get_catch_sd(x, yrs = 175:200)))
+  tmp_df <- data.frame(iteration = as.integer(iterations), scenario = i,
                        avg_catch = avg_catch, catch_sd = catch_sd)
   OM_metrics <- rbind(OM_metrics, tmp_df)
 }
@@ -152,25 +153,35 @@ all_metrics_long <- tidyr::gather(all_metrics, "metric", "value", 3:5)
 all_metrics_long$value_bils <- all_metrics_long$value/1000000000
 all_metrics_long$scen_fac <- factor(all_metrics_long$scenario, 
   levels = c("sel-low-Btgt_0.4", "sel-med-Btgt_0.4", "sel-hi-Btgt_0.4",
-             "sel-low-Btgt_0.6", "sel-med-Btgt_0.6", "sel-hi-Btgt_0.6" ))
+             "sel-low-Btgt_0.6", "sel-med-Btgt_0.6", "sel-hi-Btgt_0.6" ), 
+  labels = c("low", "med", "high", "low", "med", "high"))
+
+all_metrics_long <- all_metrics_long %>%
+                      tidyr::separate(col = scenario,
+                               into = c("OM_sel", "Btgt"), 
+                               sep = "-Btgt_", 
+                               remove = FALSE)
 
 metrics <- unique(all_metrics_long$metric)
 # todo: convert to useing violin plots
 plots <- lapply(metrics, function(i, all_metrics_long) {
   title_lab <- switch(i, 
-                  avg_catch = "Average Catch", 
-                  avg_SSB = "Average SSB", 
-                  catch_sd = "Catch SD")
+                  avg_catch = "Average Catch, years 175-200",
+                  avg_SSB = "Average SSB, years 175-200",
+                  catch_sd = "Catch SD, years 175 -200")
   plot <- ggplot(data = all_metrics_long[all_metrics_long$metric == i, ],
          aes(x = scen_fac, y = value_bils)) +
-    geom_boxplot() +
+    geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
     scale_y_continuous(limits = c(0, NA))+
-    labs(title = title_lab, x = "Scenario", y = "Biomass (billions)") +
-    theme_classic()
+    labs(title = title_lab, x = "OM selectivity", y = "Biomass (billions)") +
+    theme_classic(base_size = 22)
   plot
 }, all_metrics_long = all_metrics_long)
 
-ggsave(file.path("figures", "placeholder_plot.png"))
+for (i in seq_len(length(plots))) {
+  ggsave(file.path("figures", paste0("run_sel_btarget_scens_", metrics[i], ".png")), 
+         plot = plots[[i]], width = 8, height = 6, units = "in", device = "png")
+}
 
-# how close were the point estimates of select. par to the truth? (Just look at RE)
-# and the plot as barplots
+
+
