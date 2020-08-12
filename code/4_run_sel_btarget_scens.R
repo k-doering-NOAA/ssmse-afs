@@ -47,6 +47,9 @@ for (i in scen_vals) {
   r4ss::SS_changepars(dir = tmp_cod_path, ctlfile = "control.ss_new",
                       newctlfile = "control_modified.ss", 
                       strings = "Size_DblN_ascend_se_Fishery(1)", newvals = i)
+  parfile <- r4ss::SS_readpar_3.30(parfile = file.path(tmp_cod_path, "ss.par"),
+                                   datsource = file.path(tmp_cod_path, "ss3.dat"), 
+                          ctlsource = file.path(tmp_cod_path, "control.ss_new"))
   file.remove(file.path(tmp_cod_path, "control.ss_new"))
   file.remove(file.path(tmp_cod_path, "control.ss"))
   file.remove(file.path(tmp_cod_path, "ss.par"))
@@ -55,11 +58,25 @@ for (i in scen_vals) {
   SSMSE:::run_ss_model(dir = tmp_cod_path, 
                        admb_options = "-maxfn 0 -phase 50 -nohess",
                        verbose = FALSE)
+  # add back original recdevs into the model (b/c not specified through the ctl file)
+  new_parfile <- r4ss::SS_readpar_3.30(parfile = file.path(tmp_cod_path, "ss.par"),
+                                       datsource = file.path(tmp_cod_path, "ss3.dat"), 
+                                       ctlsource = file.path(tmp_cod_path, "control.ss"))
+  new_parfile$recdev1[, "recdev"] <- parfile$recdev1[, "recdev"] # add in the recdevs to new the parfile
+  r4ss::SS_writepar_3.30(new_parfile, outfile = file.path(tmp_cod_path, "ss.par"))
+  start <- r4ss::SS_readstarter(file = file.path(tmp_cod_path, "starter.ss"), verbose = FALSE)
+  start$init_values_src <- 1 
+  r4ss::SS_writestarter(start, file = file.path(tmp_cod_path, "starter.ss"),
+                        verbose = FALSE, overwrite = TRUE)
+  #run model 1 more time to make sure consistent with the .par file
+  SSMSE:::run_ss_model(dir = tmp_cod_path, 
+                       admb_options = "-maxfn 0 -phase 50 -nohess",
+                       verbose = FALSE)
   r4ss::SS_plots(r4ss::SS_output(tmp_cod_path, verbose = FALSE, printstats = FALSE), verbose = FALSE)
 }
 
 # manipulate EM Forecasting ----
-
+# no need to re-run model for the EM, 
 for (i in Btgt_vals) {
   tmp_scen_name <- names(Btgt_vals)[Btgt_vals == i]
   tmp_cod_path <- file.path(mods_path, tmp_scen_name)
