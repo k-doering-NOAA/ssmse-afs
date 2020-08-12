@@ -99,9 +99,9 @@ for (i in Btgt_vals) {
 }
 
 # get the sampling scheme ----
-sample_struct <- SSMSE::create_sample_struct(dat = datfile_path, nyrs = 100)
+sample_struct <- SSMSE::create_sample_struct(dat = datfile_path, nyrs = 50)
 # modify
-sample_struct$lencomp <- data.frame(Yr = seq(105, 200, by = 5), 
+sample_struct$lencomp <- data.frame(Yr = seq(105, 150, by = 5), 
                                     Seas = sample_struct$lencomp$Seas,
                                     FltSvy = sample_struct$lencomp$FltSvy, 
                                     Sex = sample_struct$lencomp$Sex, 
@@ -112,14 +112,14 @@ sample_struct$lencomp <- data.frame(Yr = seq(105, 200, by = 5),
 call_SSMSE <- function(scen_name, OM_dir_path, EM_dir_path, sample_struct) {
   out <- SSMSE::run_SSMSE(scen_name_vec = scen_name, # name of the scenario
                           out_dir_scen_vec = "model_runs", # directory in which to run the scenario
-                          iter_vec = 100, # run with 5 iterations each
+                          iter_vec = 100,
                           OM_in_dir_vec = OM_dir_path,
                           EM_in_dir_vec = EM_dir_path,
                           MS_vec = "EM",       # The management strategy is specified in the EM
                           use_SS_boot_vec = TRUE, # use the SS bootstrap module for sampling
-                          nyrs_vec = 100,        # Years to project OM forward
+                          nyrs_vec = 50,        # Years to project OM forward
                           scope = 2,
-                          nyrs_assess_vec = 5, # Years between assessments
+                          nyrs_assess_vec = 10, # Years between assessments
                           rec_dev_pattern = "rand", # Don't use recruitment deviations
                           impl_error_pattern = "none", # Don't use implementation error
                           sample_struct_list = list(sample_struct), # How to sample data for running the EM.
