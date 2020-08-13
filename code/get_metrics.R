@@ -12,6 +12,13 @@ get_catch_sd <- function(datfile, yrs = 101:120) {
   dat <- r4ss::SS_readdat(datfile, verbose = FALSE)
   catch_var <- sd(dat$catch[dat$catch$year %in% yrs, "catch"])
 }
+
+get_catch_cv <- function(datfile, yrs = 101:120) {
+  dat <- r4ss::SS_readdat(datfile, verbose = FALSE)
+  catch <- dat$catch[dat$catch$year %in% yrs, "catch"]
+  catch_var <- sd(catch)/mean(catch)
+}
+
 get_SSB_avg <- function(summary, min_yr = 175, max_yr = 200) {
   OM_vals <- unique(summary$ts$model_run)
   OM_vals <- grep("_OM$", OM_vals, value = TRUE)
@@ -22,6 +29,22 @@ get_SSB_avg <- function(summary, min_yr = 175, max_yr = 200) {
           group_by(iteration, scenario) %>% 
           summarize(avg_SSB = mean(SpawnBio), .groups = "keep") %>% 
           ungroup()
+  SSB_yr
+}
+get_rel_SSB_avg <- function(summary, min_yr, max_yr) {
+  OM_vals <- unique(summary$ts$model_run)
+  OM_vals <- grep("_OM$", OM_vals, value = TRUE)
+  B_unfished <- summary$scalar %>% 
+                 filter(model_run %in% OM_vals) %>% 
+                 select(iteration, scenario,SSB_Unfished)
+  SSB_yr <- summary$ts %>% 
+              filter(year >= min_yr & year <= max_yr) %>% 
+              select(iteration, scenario, year, SpawnBio)
+  SSB_yr <- left_join(SSB_yr, B_unfished) %>% 
+              mutate(Rel_SSB = SpawnBio/SSB_Unfished) %>% 
+              group_by(iteration, scenario) %>% 
+              summarize(avg_SSB = mean(Rel_SSB), .groups = "keep") %>% 
+              ungroup()
   SSB_yr
 }
 

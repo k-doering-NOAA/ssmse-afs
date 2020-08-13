@@ -136,14 +136,11 @@ output <- furrr::future_pmap(scenarios,
 # look at results ----
 summary <- SSMSE::SSMSE_summary_all(dir = "model_runs")
 
-
-
-
 # summary <- list()
 # summary$ts <- read.csv("model_runs/ss3sim_ts.csv")
 # summary$scalar <- read.csv("model_runs/ss3sim_scalar.csv")
 
-SSB_df <- check_convergence(summary, n_EMs = 20, max_yr = 200)
+SSB_df <- check_convergence(summary, n_EMs = 6, max_yr = 150)
 
 # calculate performance metrics ----
 # look at catch in OM from yrs 101:120.
@@ -157,13 +154,23 @@ for (i in scenarios$scen_name) { # scenarios$scen_name to make general
                   list.dirs(file.path("model_runs", i, iterations[1]), full.names = FALSE), 
                   value = TRUE)
   OM_dat <- file.path("model_runs", i, iterations, OM_name, "ss3.dat")
-  avg_catch <- unlist(lapply(OM_dat, function(x) get_avg_catch(x, yrs = 175:200)))
-  catch_sd <- unlist(lapply(OM_dat, function(x) get_catch_sd(x, yrs = 175:200)))
+  avg_catch <- unlist(lapply(OM_dat, function(x) get_avg_catch(x, yrs = 126:150)))
+  catch_sd <- unlist(lapply(OM_dat, function(x) get_catch_sd(x, yrs = 126:150)))
   tmp_df <- data.frame(iteration = as.integer(iterations), scenario = i,
                        avg_catch = avg_catch, catch_sd = catch_sd)
   OM_metrics <- rbind(OM_metrics, tmp_df)
 }
-SSB_avg <- get_SSB_avg(summary, min_yr = 175, max_yr = 200)
+SSB_avg <- get_SSB_avg(summary, min_yr = 126, max_yr = 150)
+SSB_rel <- get_rel_SSB_avg(summary, min_yr = 126, max_yr = 150)
+SSB_rel$scen_fac <- factor(SSB_rel$scenario, 
+  levels = c("sel-low-Btgt_0.4", "sel-med-Btgt_0.4", "sel-hi-Btgt_0.4",
+             "sel-low-Btgt_0.6", "sel-med-Btgt_0.6", "sel-hi-Btgt_0.6" ), 
+  labels = c("low", "med", "high", "low", "med", "high"))
+SSB_rel <- SSB_rel %>%
+            tidyr::separate(col = scenario,
+                            into = c("OM_sel", "Btgt"), 
+                            sep = "-Btgt_",
+                            remove = FALSE)
 
 all_metrics <- full_join(OM_metrics, SSB_avg)
 all_metrics_long <- tidyr::gather(all_metrics, "metric", "value", 3:5)
@@ -183,14 +190,18 @@ metrics <- unique(all_metrics_long$metric)
 # todo: convert to useing violin plots
 plots <- lapply(metrics, function(i, all_metrics_long) {
   title_lab <- switch(i, 
-                  avg_catch = "Average Catch, years 175-200",
-                  avg_SSB = "Average SSB, years 175-200",
-                  catch_sd = "Catch SD, years 175 -200")
+                  avg_catch = "long-term average catch (years 126-150)",
+                  avg_SSB = "long-term average SSB (years 126-150)",
+                  catch_sd = "long-term catch variability (years 126-150)")
+  yaxis_lab <- switch(i, 
+                      avg_catch = "Catch (billion metric tons)",
+                      avg_SSB = "Biomass (billion metric tons)",
+                      catch_sd = "Catch (billion metric tons)")
   plot <- ggplot(data = all_metrics_long[all_metrics_long$metric == i, ],
          aes(x = scen_fac, y = value_bils)) +
     geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
     scale_y_continuous(limits = c(0, NA))+
-    labs(title = title_lab, x = "OM selectivity", y = "Biomass (billions)") +
+    labs(title = title_lab, x = "OM selectivity", y = yaxis_lab) +
     theme_classic(base_size = 22)
   plot
 }, all_metrics_long = all_metrics_long)
@@ -200,5 +211,48 @@ for (i in seq_len(length(plots))) {
          plot = plots[[i]], width = 8, height = 6, units = "in", device = "png")
 }
 
+# make relative biomass plot ----
+plot_relative <- ggplot(data = SSB_rel, aes(x = scen_fac, y = avg_SSB)) +
+                  geom_hline(yintercept = 0.6, color = "gray") +
+                  geom_hline(yintercept = 0.4, color = "gray")+
+                  geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
+                  scale_y_continuous(limits = c(0, 0.8))+
+                  labs(title = "long-term average relative SSB\n(years 126-150)", 
+                       x = "OM selectivity", y = "SSB/Bo") +
+                  theme_classic(base_size = 22)
+ggsave(file.path("figures", paste0("run_sel_btarget_scens_", "SSB_rel", ".png")), 
+       width = 8, height = 6, units = "in", device = "png")
 
+# get cv catch ----
 
+catch_cv_df <- NULL
+for (i in scenarios$scen_name) { # scenarios$scen_name to make general
+  
+  iterations <- list.dirs(file.path("model_runs", i), recursive = FALSE, full.names = FALSE)
+  OM_name <- grep("_OM$",
+                  list.dirs(file.path("model_runs", i, iterations[1]), full.names = FALSE), 
+                  value = TRUE)
+  OM_dat <- file.path("model_runs", i, iterations, OM_name, "ss3.dat")
+  catch_cv <- unlist(lapply(OM_dat, function(x) get_catch_cv(x, yrs = 126:150)))
+  tmp_df <- data.frame(iteration = as.integer(iterations), scenario = i,
+                       catch_cv = catch_cv)
+  catch_cv_df <- rbind(catch_cv_df, tmp_df)
+}
+catch_cv_df$scen_fac <- factor(catch_cv_df$scenario, 
+                           levels = c("sel-low-Btgt_0.4", "sel-med-Btgt_0.4", "sel-hi-Btgt_0.4",
+                                      "sel-low-Btgt_0.6", "sel-med-Btgt_0.6", "sel-hi-Btgt_0.6" ), 
+                           labels = c("low", "med", "high", "low", "med", "high"))
+catch_cv_df <- catch_cv_df %>%
+  tidyr::separate(col = scenario,
+                  into = c("OM_sel", "Btgt"), 
+                  sep = "-Btgt_",
+                  remove = FALSE)
+
+plot_cv <- ggplot(data = catch_cv_df, aes(x = scen_fac, y = catch_cv)) +
+  geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
+  scale_y_continuous(limits = c(0, NA)) +
+  labs(title = "long-term catch variability (years 126-150)", 
+       x = "OM selectivity", y = "coefficient of variation") +
+  theme_classic(base_size = 22)
+ggsave(file.path("figures", paste0("run_sel_btarget_scens_", "catch_CV", ".png")), 
+       width = 8, height = 6, units = "in", device = "png")
