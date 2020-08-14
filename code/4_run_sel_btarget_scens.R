@@ -143,9 +143,7 @@ summary <- SSMSE::SSMSE_summary_all(dir = "model_runs")
 SSB_df <- check_convergence(summary, n_EMs = 6, max_yr = 150)
 
 # calculate performance metrics ----
-# look at catch in OM from yrs 101:120.
-# Keep it simple with total catch, avgcatch, sdcatch, and SSB in yr 120
-
+# look at catch in OM from yrs 125:150
 OM_metrics <- NULL
 for (i in scenarios$scen_name) { # scenarios$scen_name to make general
 
@@ -190,9 +188,9 @@ metrics <- unique(all_metrics_long$metric)
 # todo: convert to useing violin plots
 plots <- lapply(metrics, function(i, all_metrics_long) {
   title_lab <- switch(i, 
-                  avg_catch = "long-term average catch (years 126-150)",
-                  avg_SSB = "long-term average SSB (years 126-150)",
-                  catch_sd = "long-term catch variability (years 126-150)")
+                  avg_catch = "Long-term average catch (years 126-150)",
+                  avg_SSB = "Long-term average SSB (years 126-150)",
+                  catch_sd = "Long-term catch variability (years 126-150)")
   yaxis_lab <- switch(i, 
                       avg_catch = "Catch (billion metric tons)",
                       avg_SSB = "Biomass (billion metric tons)",
@@ -217,7 +215,7 @@ plot_relative <- ggplot(data = SSB_rel, aes(x = scen_fac, y = avg_SSB)) +
                   geom_hline(yintercept = 0.4, color = "gray")+
                   geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
                   scale_y_continuous(limits = c(0, 0.8))+
-                  labs(title = "long-term average relative SSB\n(years 126-150)", 
+                  labs(title = "Long-term average relative SSB\n(years 126-150)", 
                        x = "OM selectivity", y = "SSB/Bo") +
                   theme_classic(base_size = 22)
 ggsave(file.path("figures", paste0("run_sel_btarget_scens_", "SSB_rel", ".png")), 
@@ -251,7 +249,7 @@ catch_cv_df <- catch_cv_df %>%
 plot_cv <- ggplot(data = catch_cv_df, aes(x = scen_fac, y = catch_cv)) +
   geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
   scale_y_continuous(limits = c(0, NA)) +
-  labs(title = "long-term catch variability (years 126-150)", 
+  labs(title = "Long-term catch variability (years 126-150)", 
        x = "OM selectivity", y = "coefficient of variation") +
   theme_classic(base_size = 22)
 ggsave(file.path("figures", paste0("run_sel_btarget_scens_", "catch_CV", ".png")), 
