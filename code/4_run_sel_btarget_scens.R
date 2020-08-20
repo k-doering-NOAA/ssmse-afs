@@ -2,7 +2,7 @@
 
 # load pkgs set options ----
 #devtools::install_github("r4ss/r4ss", ref = "15444de")
-# devtools::install_github("nmfs-fish-tools/SSMSE", ref = "404023f")
+#devtools::install_github("nmfs-fish-tools/SSMSE", ref = "8a771f1")
 library(SSMSE)
 library(r4ss)
 library(dplyr)
@@ -199,6 +199,7 @@ plots <- lapply(metrics, function(i, all_metrics_long) {
          aes(x = scen_fac, y = value_bils)) +
     geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
     scale_y_continuous(limits = c(0, NA))+
+    scale_fill_brewer(palette = "Set2", direction = -1)+
     labs(title = title_lab, x = "OM selectivity", y = yaxis_lab) +
     theme_classic(base_size = 22)
   plot
@@ -215,6 +216,7 @@ plot_relative <- ggplot(data = SSB_rel, aes(x = scen_fac, y = avg_SSB)) +
                   geom_hline(yintercept = 0.4, color = "gray")+
                   geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
                   scale_y_continuous(limits = c(0, 0.8))+
+                  scale_fill_brewer(palette = "Set2", direction = -1)+
                   labs(title = "Long-term average relative SSB\n(years 126-150)", 
                        x = "OM selectivity", y = "SSB/Bo") +
                   theme_classic(base_size = 22)
@@ -249,6 +251,7 @@ catch_cv_df <- catch_cv_df %>%
 plot_cv <- ggplot(data = catch_cv_df, aes(x = scen_fac, y = catch_cv)) +
   geom_violin(draw_quantiles = 0.5, aes(fill = Btgt)) +
   scale_y_continuous(limits = c(0, NA)) +
+  scale_fill_brewer(palette = "Set2", direction = -1)+
   labs(title = "Long-term catch variability (years 126-150)", 
        x = "OM selectivity", y = "coefficient of variation") +
   theme_classic(base_size = 22)
