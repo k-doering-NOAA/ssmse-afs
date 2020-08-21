@@ -4,6 +4,6 @@
 .Ruserdata
 *.Rproj
 model_runs/
-input_models/
 old_scenarios/
 !model_runs/*.csv
+input_models/*/plots
