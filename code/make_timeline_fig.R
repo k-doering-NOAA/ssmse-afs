@@ -40,7 +40,7 @@ df <- merge(x = df,
 df <- df[with(df, order(date, status)),]
 
 # define the buffer ---
-month_buffer <- 2
+month_buffer <- 3
 month_date_range <-
   seq(min(df$date) - months(month_buffer),
       max(df$date) + months(month_buffer),
@@ -86,7 +86,7 @@ timeline_plot <-
     data = year_df,
     aes(x = year_date_range, y = -0.2, label = year_format,
         fontface = "bold"), size = 4, color = 'black') +
-  geom_text(data = df, aes(y = position, label = event, fontface = "bold"), size = 3.8)+
+  geom_text(data = df, aes(y = position, label = event, fontface = "bold"), size = 3.5)+
   theme_classic() +
   theme(# Don't show axes, appropriately position legend
     axis.line.y = element_blank(),

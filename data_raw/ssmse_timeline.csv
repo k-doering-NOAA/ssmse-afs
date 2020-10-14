@@ -1,7 +1,8 @@
 month,year,event,status
-8,2020,Automated plotting options,planned
+12,2020,Automated plotting options,planned
 9,2020,More realistic sampling options,planned
 10,2020,More flexible management procedures,planned
-12,2020,Gather feedback from beta testers,planned
+11,2020,Allow OM parameters to deviate,planned
+1,2021,Gather feedback from beta testers,planned
 3,2021,Develop based on beta tester feedback,planned
-7,2021,Submit package to CRAN,planned
+9,2021,Submit package to CRAN,planned
